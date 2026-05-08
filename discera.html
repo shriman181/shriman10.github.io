@@ -1,0 +1,971 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Discera — Pre-Production Intelligence for Entertainment</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400;1,500&family=Syne:wght@400;500;600;700&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #080808;
+    --bg2: #0f0f0f;
+    --bg3: #141414;
+    --gold: #C8A96E;
+    --gold-light: #E2C98A;
+    --gold-dim: rgba(200,169,110,0.15);
+    --white: #F5F0E8;
+    --muted: rgba(245,240,232,0.45);
+    --faint: rgba(245,240,232,0.12);
+    --border: rgba(200,169,110,0.18);
+    --border-white: rgba(245,240,232,0.08);
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--white);
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 300;
+    font-size: 16px;
+    line-height: 1.7;
+    overflow-x: hidden;
+    cursor: none;
+  }
+
+  /* --- CUSTOM CURSOR --- */
+  .cursor {
+    width: 8px; height: 8px;
+    background: var(--gold);
+    border-radius: 50%;
+    position: fixed; top: 0; left: 0;
+    pointer-events: none; z-index: 9999;
+    transition: transform 0.15s ease, opacity 0.2s;
+    transform: translate(-50%, -50%);
+  }
+  .cursor-ring {
+    width: 32px; height: 32px;
+    border: 1px solid rgba(200,169,110,0.5);
+    border-radius: 50%;
+    position: fixed; top: 0; left: 0;
+    pointer-events: none; z-index: 9998;
+    transition: transform 0.4s cubic-bezier(0.23,1,0.32,1), width 0.3s, height 0.3s, opacity 0.2s;
+    transform: translate(-50%, -50%);
+  }
+  .cursor-ring.expand { width: 56px; height: 56px; border-color: var(--gold); }
+  @media (pointer: coarse) { .cursor, .cursor-ring { display: none; } body { cursor: auto; } }
+
+  /* --- GRAIN OVERLAY --- */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.035'/%3E%3C/svg%3E");
+    background-size: 180px 180px;
+    opacity: 0.5;
+    pointer-events: none;
+    z-index: 1000;
+  }
+
+  /* --- NAV --- */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0;
+    z-index: 900;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 1.4rem 3rem;
+    border-bottom: 1px solid transparent;
+    transition: border-color 0.4s, background 0.4s, backdrop-filter 0.4s;
+  }
+  nav.scrolled {
+    border-color: var(--border-white);
+    background: rgba(8,8,8,0.88);
+    backdrop-filter: blur(18px);
+  }
+  .nav-logo {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.5rem;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    color: var(--white);
+    text-decoration: none;
+  }
+  .nav-logo span { color: var(--gold); }
+  .nav-links {
+    display: flex; align-items: center; gap: 2.5rem;
+    list-style: none;
+  }
+  .nav-links a {
+    color: var(--muted); text-decoration: none;
+    font-size: 0.78rem; letter-spacing: 0.1em; text-transform: uppercase;
+    font-family: 'Syne', sans-serif; font-weight: 500;
+    transition: color 0.25s;
+  }
+  .nav-links a:hover { color: var(--white); }
+  .nav-cta {
+    border: 1px solid var(--border);
+    color: var(--gold) !important;
+    padding: 0.5rem 1.25rem;
+    border-radius: 2px;
+    transition: background 0.25s, color 0.25s !important;
+  }
+  .nav-cta:hover { background: var(--gold-dim) !important; color: var(--gold-light) !important; }
+  .hamburger { display: none; flex-direction: column; gap: 5px; cursor: pointer; padding: 4px; }
+  .hamburger span { display: block; width: 24px; height: 1px; background: var(--white); transition: all 0.3s; }
+  .mobile-menu {
+    display: none; position: fixed; inset: 0; background: rgba(8,8,8,0.97);
+    backdrop-filter: blur(20px); z-index: 800;
+    flex-direction: column; align-items: center; justify-content: center; gap: 2.5rem;
+  }
+  .mobile-menu.open { display: flex; }
+  .mobile-menu a {
+    color: var(--white); text-decoration: none;
+    font-family: 'Cormorant Garamond', serif; font-size: 2.5rem; font-weight: 300;
+    letter-spacing: 0.06em; transition: color 0.2s;
+  }
+  .mobile-menu a:hover { color: var(--gold); }
+  @media (max-width: 768px) {
+    nav { padding: 1.2rem 1.5rem; }
+    .nav-links { display: none; }
+    .hamburger { display: flex; }
+  }
+
+  /* --- SECTIONS --- */
+  section { position: relative; }
+
+  /* --- HERO --- */
+  #hero {
+    min-height: 100vh;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 8rem 2rem 6rem;
+    text-align: center;
+    overflow: hidden;
+  }
+  .hero-bg {
+    position: absolute; inset: 0; z-index: 0;
+    background: radial-gradient(ellipse 80% 60% at 50% 40%, rgba(200,169,110,0.07) 0%, transparent 70%);
+  }
+  .hero-film-strip {
+    position: absolute; top: 0; left: 0; right: 0; height: 4px;
+    background: repeating-linear-gradient(90deg, var(--gold) 0, var(--gold) 28px, transparent 28px, transparent 40px);
+    opacity: 0.4;
+  }
+  .hero-eyebrow {
+    font-family: 'Syne', sans-serif; font-size: 0.72rem;
+    letter-spacing: 0.22em; text-transform: uppercase;
+    color: var(--gold); margin-bottom: 1.5rem;
+    opacity: 0; animation: fadeUp 0.9s 0.2s forwards;
+  }
+  .hero-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(3.2rem, 8vw, 7.5rem);
+    font-weight: 300; line-height: 1.02;
+    letter-spacing: -0.01em;
+    color: var(--white);
+    max-width: 920px;
+    opacity: 0; animation: fadeUp 1s 0.35s forwards;
+    position: relative; z-index: 1;
+  }
+  .hero-title em { color: var(--gold); font-style: italic; }
+  .hero-sub {
+    font-size: 1rem; color: var(--muted); max-width: 520px;
+    margin: 2rem auto 0; line-height: 1.8;
+    opacity: 0; animation: fadeUp 1s 0.55s forwards;
+    position: relative; z-index: 1;
+  }
+  .hero-actions {
+    display: flex; gap: 1rem; justify-content: center;
+    margin-top: 3rem; flex-wrap: wrap;
+    opacity: 0; animation: fadeUp 1s 0.75s forwards;
+    position: relative; z-index: 1;
+  }
+  .btn-primary {
+    background: var(--gold); color: #080808;
+    padding: 0.85rem 2.2rem; border-radius: 2px;
+    font-family: 'Syne', sans-serif; font-size: 0.78rem;
+    font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase;
+    text-decoration: none; transition: background 0.25s, transform 0.2s;
+    display: inline-block;
+  }
+  .btn-primary:hover { background: var(--gold-light); transform: translateY(-1px); }
+  .btn-ghost {
+    border: 1px solid var(--border); color: var(--white);
+    padding: 0.85rem 2.2rem; border-radius: 2px;
+    font-family: 'Syne', sans-serif; font-size: 0.78rem;
+    font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase;
+    text-decoration: none; transition: border-color 0.25s, background 0.25s;
+    display: inline-block;
+  }
+  .btn-ghost:hover { border-color: var(--gold); background: var(--gold-dim); }
+  .hero-scroll {
+    position: absolute; bottom: 2.5rem; left: 50%; transform: translateX(-50%);
+    display: flex; flex-direction: column; align-items: center; gap: 8px;
+    opacity: 0; animation: fadeIn 1s 1.2s forwards;
+  }
+  .hero-scroll span { font-size: 0.65rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); }
+  .scroll-line { width: 1px; height: 40px; background: linear-gradient(to bottom, var(--gold), transparent); animation: scrollPulse 2s infinite; }
+
+  /* Floating frames decoration */
+  .hero-frames {
+    position: absolute; inset: 0; pointer-events: none; overflow: hidden; z-index: 0;
+  }
+  .frame {
+    position: absolute; border: 1px solid var(--border-white);
+    border-radius: 2px; opacity: 0;
+    animation: frameFloat linear infinite;
+  }
+  .frame:nth-child(1) { width: 120px; height: 80px; top: 15%; left: 8%; animation-duration: 18s; animation-delay: 0s; }
+  .frame:nth-child(2) { width: 80px; height: 52px; top: 25%; right: 10%; animation-duration: 22s; animation-delay: -6s; }
+  .frame:nth-child(3) { width: 60px; height: 40px; bottom: 30%; left: 12%; animation-duration: 16s; animation-delay: -9s; }
+  .frame:nth-child(4) { width: 100px; height: 66px; bottom: 20%; right: 7%; animation-duration: 20s; animation-delay: -3s; }
+  .frame-inner { width: 100%; height: 100%; background: rgba(200,169,110,0.04); }
+  @keyframes frameFloat {
+    0% { opacity: 0; transform: translateY(20px) rotate(0deg); }
+    10% { opacity: 1; }
+    90% { opacity: 1; }
+    100% { opacity: 0; transform: translateY(-20px) rotate(2deg); }
+  }
+
+  /* --- MARQUEE --- */
+  .marquee-section {
+    border-top: 1px solid var(--border-white);
+    border-bottom: 1px solid var(--border-white);
+    padding: 1.1rem 0; overflow: hidden;
+    background: var(--bg2);
+  }
+  .marquee-track {
+    display: flex; gap: 0;
+    animation: marqueeScroll 30s linear infinite;
+    white-space: nowrap; width: max-content;
+  }
+  .marquee-item {
+    display: inline-flex; align-items: center; gap: 1.2rem;
+    padding: 0 2.5rem;
+    font-family: 'Syne', sans-serif; font-size: 0.7rem;
+    letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted);
+  }
+  .marquee-dot { width: 4px; height: 4px; border-radius: 50%; background: var(--gold); flex-shrink: 0; }
+  @keyframes marqueeScroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+
+  /* --- PROBLEM --- */
+  #problem {
+    padding: 8rem 2rem;
+    max-width: 1200px; margin: 0 auto;
+  }
+  .section-label {
+    font-family: 'Syne', sans-serif; font-size: 0.7rem;
+    letter-spacing: 0.22em; text-transform: uppercase;
+    color: var(--gold); margin-bottom: 1.2rem;
+    display: flex; align-items: center; gap: 0.8rem;
+  }
+  .section-label::before {
+    content: ''; display: block; width: 30px; height: 1px; background: var(--gold);
+  }
+  .problem-grid {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 5rem; align-items: center; margin-top: 3rem;
+  }
+  .problem-headline {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(2.2rem, 4vw, 3.5rem); font-weight: 300;
+    line-height: 1.15; letter-spacing: 0.01em;
+  }
+  .problem-headline em { color: var(--gold); font-style: italic; }
+  .problem-body { color: var(--muted); line-height: 1.9; margin-top: 1.5rem; font-size: 0.95rem; }
+  .problem-cards { display: flex; flex-direction: column; gap: 1px; }
+  .problem-card {
+    background: var(--bg2); border: 1px solid var(--border-white);
+    padding: 1.5rem 1.75rem;
+    transition: border-color 0.3s, background 0.3s;
+    position: relative; overflow: hidden;
+  }
+  .problem-card::before {
+    content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 2px;
+    background: var(--gold); transform: scaleY(0); transform-origin: bottom;
+    transition: transform 0.35s cubic-bezier(0.23,1,0.32,1);
+  }
+  .problem-card:hover::before { transform: scaleY(1); }
+  .problem-card:hover { background: var(--bg3); border-color: var(--border); }
+  .pc-num { font-family: 'Cormorant Garamond', serif; font-size: 2.2rem; font-weight: 300; color: var(--gold); line-height: 1; }
+  .pc-label { font-size: 0.82rem; color: var(--muted); margin-top: 0.3rem; }
+  .pc-desc { font-size: 0.88rem; color: var(--muted); margin-top: 0.6rem; line-height: 1.65; }
+  @media (max-width: 768px) {
+    .problem-grid { grid-template-columns: 1fr; gap: 3rem; }
+    #problem { padding: 5rem 1.5rem; }
+  }
+
+  /* --- STATS BAR --- */
+  .stats-bar {
+    background: var(--bg2);
+    border-top: 1px solid var(--border-white);
+    border-bottom: 1px solid var(--border-white);
+    padding: 4rem 2rem;
+  }
+  .stats-inner {
+    max-width: 1100px; margin: 0 auto;
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    gap: 2rem; text-align: center;
+  }
+  .stat-item { padding: 1rem; }
+  .stat-num {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(2.5rem, 5vw, 4rem); font-weight: 300;
+    color: var(--gold); line-height: 1;
+  }
+  .stat-unit { font-size: 1.5rem; }
+  .stat-desc { font-size: 0.78rem; color: var(--muted); margin-top: 0.5rem; letter-spacing: 0.04em; line-height: 1.6; }
+  @media (max-width: 640px) {
+    .stats-inner { grid-template-columns: repeat(2, 1fr); }
+  }
+
+  /* --- PRODUCT --- */
+  #product {
+    padding: 8rem 2rem;
+    max-width: 1200px; margin: 0 auto;
+  }
+  .product-header { text-align: center; max-width: 680px; margin: 0 auto 5rem; }
+  .section-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(2.2rem, 4vw, 3.8rem); font-weight: 300;
+    line-height: 1.1; margin-top: 1rem;
+  }
+  .section-title em { color: var(--gold); font-style: italic; }
+  .modules-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    gap: 1px; background: var(--border-white);
+    border: 1px solid var(--border-white);
+  }
+  .module {
+    background: var(--bg); padding: 2.2rem;
+    transition: background 0.3s;
+    position: relative; overflow: hidden;
+  }
+  .module::after {
+    content: attr(data-num);
+    position: absolute; bottom: -0.5rem; right: 1rem;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 5rem; font-weight: 300; color: var(--gold);
+    opacity: 0.05; line-height: 1; pointer-events: none;
+    transition: opacity 0.3s;
+  }
+  .module:hover { background: var(--bg2); }
+  .module:hover::after { opacity: 0.1; }
+  .module-icon {
+    width: 36px; height: 36px; margin-bottom: 1.2rem;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .module-icon svg { width: 100%; height: 100%; stroke: var(--gold); stroke-width: 1.5; fill: none; }
+  .module-name {
+    font-family: 'Syne', sans-serif; font-size: 0.85rem;
+    font-weight: 600; letter-spacing: 0.06em; color: var(--white);
+    margin-bottom: 0.75rem;
+  }
+  .module-desc { font-size: 0.85rem; color: var(--muted); line-height: 1.75; }
+  @media (max-width: 900px) { .modules-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 560px) { .modules-grid { grid-template-columns: 1fr; } .module { padding: 1.8rem; } }
+
+  /* --- HOW IT WORKS --- */
+  #how {
+    padding: 8rem 2rem;
+    background: var(--bg2);
+    border-top: 1px solid var(--border-white);
+    border-bottom: 1px solid var(--border-white);
+  }
+  .how-inner { max-width: 1100px; margin: 0 auto; }
+  .how-header { text-align: center; max-width: 640px; margin: 0 auto 5rem; }
+  .pipeline {
+    display: grid; grid-template-columns: repeat(5, 1fr);
+    gap: 0; position: relative;
+  }
+  .pipeline::before {
+    content: ''; position: absolute;
+    top: 38px; left: 10%; right: 10%; height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gold), var(--gold), transparent);
+    opacity: 0.3;
+  }
+  .pipe-step { text-align: center; padding: 0 1rem; position: relative; }
+  .pipe-node {
+    width: 76px; height: 76px; border-radius: 50%;
+    border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 1.2rem;
+    background: var(--bg);
+    position: relative; z-index: 1;
+    transition: border-color 0.3s, background 0.3s;
+  }
+  .pipe-node:hover { border-color: var(--gold); background: var(--gold-dim); }
+  .pipe-node svg { width: 28px; height: 28px; stroke: var(--gold); stroke-width: 1.5; fill: none; }
+  .pipe-num {
+    position: absolute; top: -8px; right: -4px;
+    width: 20px; height: 20px; border-radius: 50%;
+    background: var(--gold); color: #080808;
+    font-size: 0.6rem; font-weight: 700;
+    font-family: 'Syne', sans-serif;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .pipe-title {
+    font-family: 'Syne', sans-serif; font-size: 0.78rem;
+    font-weight: 600; letter-spacing: 0.06em; color: var(--white);
+    margin-bottom: 0.5rem;
+  }
+  .pipe-desc { font-size: 0.78rem; color: var(--muted); line-height: 1.65; }
+  @media (max-width: 700px) {
+    .pipeline { grid-template-columns: 1fr; gap: 2rem; }
+    .pipeline::before { display: none; }
+    .pipe-step { display: flex; gap: 1.2rem; text-align: left; }
+    .pipe-node { margin: 0; flex-shrink: 0; }
+  }
+
+  /* --- MARKET --- */
+  #market {
+    padding: 8rem 2rem;
+    max-width: 1100px; margin: 0 auto;
+  }
+  .market-grid {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 4rem; align-items: start; margin-top: 3rem;
+  }
+  .market-text { color: var(--muted); font-size: 0.95rem; line-height: 1.9; }
+  .market-text p + p { margin-top: 1rem; }
+  .market-cards { display: flex; flex-direction: column; gap: 12px; }
+  .mcard {
+    border: 1px solid var(--border-white);
+    background: var(--bg2); padding: 1.5rem 1.75rem;
+    display: flex; align-items: center; gap: 1.5rem;
+    transition: border-color 0.3s;
+  }
+  .mcard:hover { border-color: var(--border); }
+  .mcard-val {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 2.2rem; font-weight: 300; color: var(--gold); flex-shrink: 0; line-height: 1;
+  }
+  .mcard-info-title { font-size: 0.85rem; font-weight: 500; color: var(--white); }
+  .mcard-info-sub { font-size: 0.8rem; color: var(--muted); margin-top: 2px; }
+  @media (max-width: 768px) {
+    .market-grid { grid-template-columns: 1fr; gap: 2.5rem; }
+    #market { padding: 5rem 1.5rem; }
+  }
+
+  /* --- FOUNDER --- */
+  #founder {
+    padding: 8rem 2rem;
+    background: var(--bg2);
+    border-top: 1px solid var(--border-white);
+    border-bottom: 1px solid var(--border-white);
+  }
+  .founder-inner { max-width: 1100px; margin: 0 auto; }
+  .founder-grid {
+    display: grid; grid-template-columns: 340px 1fr;
+    gap: 5rem; align-items: center; margin-top: 4rem;
+  }
+  .founder-portrait {
+    position: relative; aspect-ratio: 3/4;
+    background: var(--bg3);
+    border: 1px solid var(--border-white);
+    overflow: hidden;
+  }
+  .founder-portrait::before {
+    content: ''; position: absolute; inset: 0;
+    background: radial-gradient(circle at 50% 30%, rgba(200,169,110,0.08), transparent 70%);
+  }
+  .founder-initials {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 6rem; font-weight: 300; color: rgba(200,169,110,0.25);
+    letter-spacing: 0.05em;
+  }
+  .founder-frame-accent {
+    position: absolute; bottom: 0; left: 0; right: 0; height: 4px;
+    background: linear-gradient(90deg, var(--gold), transparent);
+  }
+  .founder-name {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(2rem, 4vw, 3.2rem); font-weight: 300; line-height: 1.1;
+    margin-bottom: 0.4rem;
+  }
+  .founder-role {
+    font-family: 'Syne', sans-serif; font-size: 0.72rem;
+    letter-spacing: 0.18em; text-transform: uppercase; color: var(--gold);
+    margin-bottom: 2rem;
+  }
+  .founder-bio { color: var(--muted); font-size: 0.95rem; line-height: 1.9; }
+  .founder-bio p + p { margin-top: 1rem; }
+  .founder-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 2rem; }
+  .founder-tag {
+    border: 1px solid var(--border-white); padding: 4px 14px;
+    font-size: 0.72rem; font-family: 'Syne', sans-serif;
+    letter-spacing: 0.08em; color: var(--muted);
+    transition: border-color 0.25s, color 0.25s;
+  }
+  .founder-tag:hover { border-color: var(--border); color: var(--white); }
+  .founder-links { display: flex; gap: 1rem; margin-top: 2rem; }
+  .founder-link {
+    font-family: 'Syne', sans-serif; font-size: 0.72rem;
+    letter-spacing: 0.1em; text-transform: uppercase; color: var(--gold);
+    text-decoration: none; border-bottom: 1px solid var(--border);
+    padding-bottom: 2px; transition: border-color 0.25s;
+  }
+  .founder-link:hover { border-color: var(--gold); }
+  @media (max-width: 860px) {
+    .founder-grid { grid-template-columns: 1fr; gap: 3rem; }
+    .founder-portrait { max-width: 240px; }
+    #founder { padding: 5rem 1.5rem; }
+  }
+
+  /* --- VISION --- */
+  #vision {
+    padding: 10rem 2rem;
+    text-align: center; overflow: hidden;
+    position: relative;
+  }
+  .vision-bg {
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse 70% 70% at 50% 50%, rgba(200,169,110,0.06) 0%, transparent 70%);
+  }
+  .vision-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(2.5rem, 6vw, 5.5rem); font-weight: 300;
+    line-height: 1.08; letter-spacing: 0.01em;
+    max-width: 820px; margin: 0 auto 2rem;
+    position: relative; z-index: 1;
+  }
+  .vision-title em { color: var(--gold); font-style: italic; }
+  .vision-sub { color: var(--muted); max-width: 480px; margin: 0 auto 3rem; font-size: 0.95rem; position: relative; z-index: 1; }
+  .vision-actions { position: relative; z-index: 1; display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
+
+  /* --- FOOTER --- */
+  footer {
+    border-top: 1px solid var(--border-white);
+    padding: 3rem 2rem;
+    background: var(--bg);
+  }
+  .footer-inner {
+    max-width: 1200px; margin: 0 auto;
+    display: grid; grid-template-columns: 1fr auto;
+    align-items: center; gap: 2rem;
+  }
+  .footer-logo {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.3rem; font-weight: 500; letter-spacing: 0.12em;
+    color: var(--white); text-decoration: none;
+  }
+  .footer-logo span { color: var(--gold); }
+  .footer-tagline { font-size: 0.78rem; color: var(--muted); margin-top: 0.3rem; }
+  .footer-right { text-align: right; }
+  .footer-links { display: flex; gap: 1.5rem; justify-content: flex-end; margin-bottom: 0.6rem; }
+  .footer-links a {
+    color: var(--muted); font-size: 0.75rem; text-decoration: none;
+    font-family: 'Syne', sans-serif; letter-spacing: 0.08em; text-transform: uppercase;
+    transition: color 0.2s;
+  }
+  .footer-links a:hover { color: var(--gold); }
+  .footer-copy { font-size: 0.72rem; color: rgba(245,240,232,0.25); }
+  @media (max-width: 640px) {
+    .footer-inner { grid-template-columns: 1fr; }
+    .footer-right { text-align: left; }
+    .footer-links { justify-content: flex-start; }
+  }
+
+  /* --- SCROLL REVEAL --- */
+  .reveal { opacity: 0; transform: translateY(32px); transition: opacity 0.8s cubic-bezier(0.23,1,0.32,1), transform 0.8s cubic-bezier(0.23,1,0.32,1); }
+  .reveal.visible { opacity: 1; transform: translateY(0); }
+  .reveal-delay-1 { transition-delay: 0.1s; }
+  .reveal-delay-2 { transition-delay: 0.2s; }
+  .reveal-delay-3 { transition-delay: 0.3s; }
+  .reveal-delay-4 { transition-delay: 0.4s; }
+
+  /* --- KEYFRAMES --- */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes scrollPulse {
+    0%, 100% { opacity: 1; transform: scaleY(1); }
+    50% { opacity: 0.4; transform: scaleY(0.6); }
+  }
+
+  /* --- COUNT UP --- */
+  .counting { display: inline; }
+</style>
+</head>
+<body>
+
+<div class="cursor" id="cursor"></div>
+<div class="cursor-ring" id="cursorRing"></div>
+
+<!-- NAV -->
+<nav id="nav">
+  <a href="#" class="nav-logo">disc<span>e</span>ra</a>
+  <ul class="nav-links">
+    <li><a href="#product">Platform</a></li>
+    <li><a href="#how">How it works</a></li>
+    <li><a href="#market">Market</a></li>
+    <li><a href="#founder">Founder</a></li>
+    <li><a href="#vision" class="nav-cta">Request Demo</a></li>
+  </ul>
+  <div class="hamburger" id="hamburger" aria-label="Open menu">
+    <span></span><span></span><span></span>
+  </div>
+</nav>
+
+<!-- MOBILE MENU -->
+<div class="mobile-menu" id="mobileMenu">
+  <a href="#product" onclick="closeMobileMenu()">Platform</a>
+  <a href="#how" onclick="closeMobileMenu()">How it Works</a>
+  <a href="#market" onclick="closeMobileMenu()">Market</a>
+  <a href="#founder" onclick="closeMobileMenu()">Founder</a>
+  <a href="#vision" onclick="closeMobileMenu()">Request Demo</a>
+</div>
+
+<!-- HERO -->
+<section id="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-film-strip"></div>
+  <div class="hero-frames" aria-hidden="true">
+    <div class="frame"><div class="frame-inner"></div></div>
+    <div class="frame"><div class="frame-inner"></div></div>
+    <div class="frame"><div class="frame-inner"></div></div>
+    <div class="frame"><div class="frame-inner"></div></div>
+  </div>
+  <p class="hero-eyebrow">Pre-production intelligence · Entertainment AI</p>
+  <h1 class="hero-title">Where great stories<br><em>meet</em> smarter decisions</h1>
+  <p class="hero-sub">Discera is the AI intelligence layer that helps studios, streamers, and production companies greenlight with clarity — before a single dollar is spent on set.</p>
+  <div class="hero-actions">
+    <a href="#vision" class="btn-primary">Request Demo</a>
+    <a href="#product" class="btn-ghost">Explore Platform</a>
+  </div>
+  <div class="hero-scroll" aria-hidden="true">
+    <span>Discover</span>
+    <div class="scroll-line"></div>
+  </div>
+</section>
+
+<!-- MARQUEE -->
+<div class="marquee-section" aria-hidden="true">
+  <div class="marquee-track" id="marquee">
+    <div class="marquee-item"><div class="marquee-dot"></div>Script Intelligence</div>
+    <div class="marquee-item"><div class="marquee-dot"></div>Greenlight Forecasting</div>
+    <div class="marquee-item"><div class="marquee-dot"></div>Cast Chemistry Modeling</div>
+    <div class="marquee-item"><div class="marquee-dot"></div>Territory Revenue Splits</div>
+    <div class="marquee-item"><div class="marquee-dot"></div>Risk Radar</div>
+    <div class="marquee-item"><div class="marquee-dot"></div>Release Window Optimization</div>
+    <div class="marquee-item"><div class="marquee-dot"></div>Audience Intelligence</div>
+    <div class="marquee-item"><div class="marquee-dot"></div>Box-Office Prediction</div>
+    <div class="marquee-item"><div class="marquee-dot"></div>Script Intelligence</div>
+    <div class="marquee-item"><div class="marquee-dot"></div>Greenlight Forecasting</div>
+    <div class="marquee-item"><div class="marquee-dot"></div>Cast Chemistry Modeling</div>
+    <div class="marquee-item"><div class="marquee-dot"></div>Territory Revenue Splits</div>
+    <div class="marquee-item"><div class="marquee-dot"></div>Risk Radar</div>
+    <div class="marquee-item"><div class="marquee-dot"></div>Release Window Optimization</div>
+    <div class="marquee-item"><div class="marquee-dot"></div>Audience Intelligence</div>
+    <div class="marquee-item"><div class="marquee-dot"></div>Box-Office Prediction</div>
+  </div>
+</div>
+
+<!-- PROBLEM -->
+<section id="problem">
+  <div class="section-label reveal">The Blind Spot</div>
+  <div class="problem-grid">
+    <div>
+      <h2 class="problem-headline reveal">The industry runs on<br><em>gut feeling.</em><br>Discera changes that.</h2>
+      <p class="problem-body reveal reveal-delay-1">Every year, entertainment studios commit hundreds of millions of dollars to productions based on weekend reads, room chemistry, and instinct. The greenlight decision — the single most consequential capital allocation in media — has remained stubbornly analogue.</p>
+      <p class="problem-body reveal reveal-delay-2">Discera inserts a precision intelligence layer into that exact moment: when a project exists only as a script, before casting, before production, before it's too late to change course.</p>
+    </div>
+    <div class="problem-cards">
+      <div class="problem-card reveal reveal-delay-1">
+        <div class="pc-num">~70%</div>
+        <div class="pc-label">of studio originals fail to recoup their budgets</div>
+        <div class="pc-desc">The majority of greenlit projects don't earn back what was spent — a systemic failure rooted in the absence of data at the decision point.</div>
+      </div>
+      <div class="problem-card reveal reveal-delay-2">
+        <div class="pc-num">$42B</div>
+        <div class="pc-label">in global content production spend annually</div>
+        <div class="pc-desc">A capital-intensive industry with no standardised intelligence infrastructure for pre-production risk evaluation.</div>
+      </div>
+      <div class="problem-card reveal reveal-delay-3">
+        <div class="pc-num">18mo</div>
+        <div class="pc-label">average lag before ROI failure becomes visible</div>
+        <div class="pc-desc">By the time a project underperforms, the decision is 18+ months old — and hundreds of millions have already been committed.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- STATS BAR -->
+<div class="stats-bar">
+  <div class="stats-inner">
+    <div class="stat-item reveal">
+      <div class="stat-num"><span class="counting" data-target="329" data-suffix="M">0</span><span class="stat-unit">+</span></div>
+      <div class="stat-desc">Global entertainment analytics market size (USD)</div>
+    </div>
+    <div class="stat-item reveal reveal-delay-1">
+      <div class="stat-num"><span class="counting" data-target="35" data-suffix="%">0</span></div>
+      <div class="stat-desc">CAGR — content intelligence sector (2024–2030)</div>
+    </div>
+    <div class="stat-item reveal reveal-delay-2">
+      <div class="stat-num"><span class="counting" data-target="2400" data-suffix="+">0</span></div>
+      <div class="stat-desc">Addressable production companies globally</div>
+    </div>
+    <div class="stat-item reveal reveal-delay-3">
+      <div class="stat-num"><span class="counting" data-target="40" data-suffix="K+">0</span></div>
+      <div class="stat-desc">Films in Discera's comp-title training corpus</div>
+    </div>
+  </div>
+</div>
+
+<!-- PRODUCT -->
+<section id="product">
+  <div class="product-header">
+    <div class="section-label reveal" style="justify-content: center;">The Platform</div>
+    <h2 class="section-title reveal">Six intelligence modules.<br>One <em>decisive</em> advantage.</h2>
+  </div>
+  <div class="modules-grid">
+    <div class="module reveal" data-num="01">
+      <div class="module-icon">
+        <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+      </div>
+      <div class="module-name">Script Intelligence Engine</div>
+      <div class="module-desc">Ingests raw screenplays (PDF/FDX) and outputs pacing scores, archetype mapping, dialogue sentiment, and comp-title matches against 40K+ produced films — at scene-level granularity.</div>
+    </div>
+    <div class="module reveal reveal-delay-1" data-num="02">
+      <div class="module-icon">
+        <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      </div>
+      <div class="module-name">Greenlight Forecast</div>
+      <div class="module-desc">Predicts opening-weekend revenue range, streaming retention quartile, and awards probability before casting begins. Actionable confidence intervals, not vague guidance.</div>
+    </div>
+    <div class="module reveal reveal-delay-2" data-num="03">
+      <div class="module-icon">
+        <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      </div>
+      <div class="module-name">Cast Chemistry Modeler</div>
+      <div class="module-desc">Simulates audience response to casting combinations using social graph data, historical pairing performance, and demographic affinity clusters — before talent is approached.</div>
+    </div>
+    <div class="module reveal" data-num="04">
+      <div class="module-icon">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+      </div>
+      <div class="module-name">Territory Revenue Splitter</div>
+      <div class="module-desc">Projects revenue by geography — streaming vs. theatrical, SVOD vs. licensing — segmented by genre, language dub viability, and cultural resonance index per market.</div>
+    </div>
+    <div class="module reveal reveal-delay-1" data-num="05">
+      <div class="module-icon">
+        <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      </div>
+      <div class="module-name">Risk & Sensitivity Radar</div>
+      <div class="module-desc">Flags reputational risk vectors: cultural sensitivity by territory, regulatory hurdles, talent controversy exposure, and IP clearance red zones — before they become crises.</div>
+    </div>
+    <div class="module reveal reveal-delay-2" data-num="06">
+      <div class="module-icon">
+        <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      </div>
+      <div class="module-name">Release Window Optimizer</div>
+      <div class="module-desc">Recommends optimal release windows by analysing competitive slate overlap, audience seasonality patterns, and genre saturation curves in real time.</div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section id="how">
+  <div class="how-inner">
+    <div class="how-header">
+      <div class="section-label reveal" style="justify-content: center;">The Process</div>
+      <h2 class="section-title reveal">From script upload<br>to <em>greenlight clarity</em></h2>
+    </div>
+    <div class="pipeline">
+      <div class="pipe-step reveal">
+        <div class="pipe-node">
+          <div class="pipe-num">01</div>
+          <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        </div>
+        <div class="pipe-title">Ingest</div>
+        <div class="pipe-desc">Upload screenplay or connect to your development tracker via API</div>
+      </div>
+      <div class="pipe-step reveal reveal-delay-1">
+        <div class="pipe-node">
+          <div class="pipe-num">02</div>
+          <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        </div>
+        <div class="pipe-title">Analyze</div>
+        <div class="pipe-desc">LLM + proprietary models parse structure, tone, and comp signals at scene level</div>
+      </div>
+      <div class="pipe-step reveal reveal-delay-2">
+        <div class="pipe-node">
+          <div class="pipe-num">03</div>
+          <svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+        </div>
+        <div class="pipe-title">Enrich</div>
+        <div class="pipe-desc">Real-time market signals and streaming trends layered on top of script data</div>
+      </div>
+      <div class="pipe-step reveal reveal-delay-3">
+        <div class="pipe-node">
+          <div class="pipe-num">04</div>
+          <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        </div>
+        <div class="pipe-title">Forecast</div>
+        <div class="pipe-desc">Discera returns a Greenlight Scorecard: ROI range, audience quadrant, cast shortlist</div>
+      </div>
+      <div class="pipe-step reveal reveal-delay-4">
+        <div class="pipe-node">
+          <div class="pipe-num">05</div>
+          <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+        <div class="pipe-title">Decide</div>
+        <div class="pipe-desc">Executives greenlight, pass, or request AI-guided revision briefs tied to score improvements</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- MARKET -->
+<section id="market">
+  <div class="section-label reveal">The Opportunity</div>
+  <h2 class="section-title reveal" style="max-width: 520px;">A market ready for<br><em>intelligent disruption</em></h2>
+  <div class="market-grid">
+    <div class="market-text reveal">
+      <p>The global entertainment industry generates over $2.5 trillion in revenue annually, yet the infrastructure for capital allocation decisions has not meaningfully evolved in decades. Development executives still rely on coverage notes, personal relationships, and a handful of comparable titles.</p>
+      <p>Discera targets the segment of this market where intelligence has the highest leverage: the pre-production window. Our platform serves major studios and streamers, independent production companies running 15–30 slate projects per year, literary and talent agencies looking for packaging intelligence, and film finance funds performing due diligence.</p>
+      <p>The AI-in-media market is expanding at 35% CAGR through 2030, and Discera sits at its most defensible intersection — where proprietary training data, workflow integration, and relationship-based distribution create compounding advantage.</p>
+    </div>
+    <div class="market-cards">
+      <div class="mcard reveal">
+        <div class="mcard-val">$329M</div>
+        <div><div class="mcard-info-title">Entertainment analytics market</div><div class="mcard-info-sub">Global addressable market size (USD)</div></div>
+      </div>
+      <div class="mcard reveal reveal-delay-1">
+        <div class="mcard-val">35%</div>
+        <div><div class="mcard-info-title">CAGR through 2030</div><div class="mcard-info-sub">Content AI & analytics sector growth rate</div></div>
+      </div>
+      <div class="mcard reveal reveal-delay-2">
+        <div class="mcard-val">2,400+</div>
+        <div><div class="mcard-info-title">Addressable buyers</div><div class="mcard-info-sub">Production companies globally with 10+ projects/yr</div></div>
+      </div>
+      <div class="mcard reveal reveal-delay-3">
+        <div class="mcard-val">$180K</div>
+        <div><div class="mcard-info-title">Estimated ACV per studio</div><div class="mcard-info-sub">Annual contract value for enterprise tier</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOUNDER -->
+<section id="founder">
+  <div class="founder-inner">
+    <div class="section-label reveal">The Founder</div>
+    <div class="founder-grid">
+      <div class="founder-portrait reveal">
+        <div class="founder-initials">AC</div>
+        <div class="founder-frame-accent"></div>
+      </div>
+      <div>
+        <div class="founder-name reveal">Abhik<br>Choudhary</div>
+        <div class="founder-role reveal">Founder & Chief Executive Officer</div>
+        <div class="founder-bio reveal">
+          <p>Abhik Choudhary founded Discera out of a conviction that the entertainment industry's most consequential decisions deserved the same rigour that financial markets apply to capital allocation. Growing up at the intersection of storytelling and business, he developed a deep appreciation for both the artistry of filmmaking and the structural challenges of making it commercially sustainable.</p>
+          <p>Before Discera, Abhik spent years studying how data asymmetries play out in creative industries — observing how the absence of intelligence infrastructure at the pre-production stage caused even experienced executives to make avoidable, costly missteps. He saw an opportunity to build the infrastructure that the industry was missing: a system that could honour creative ambition while giving the business side a fighting chance.</p>
+          <p>He believes the best films get made when the people behind them aren't spending the entire production afraid of the outcome. Discera exists to give studios the clarity to back the stories that matter — without the existential uncertainty that follows them through production.</p>
+        </div>
+        <div class="founder-tags reveal">
+          <div class="founder-tag">Entertainment Technology</div>
+          <div class="founder-tag">AI / Machine Learning</div>
+          <div class="founder-tag">B2B SaaS</div>
+          <div class="founder-tag">Creative Industries</div>
+          <div class="founder-tag">Venture-Backed</div>
+        </div>
+        <div class="founder-links reveal reveal-delay-1">
+          <a href="#vision" class="founder-link">Connect with Abhik</a>
+          <a href="#vision" class="founder-link">Press enquiries</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- VISION / CTA -->
+<section id="vision">
+  <div class="vision-bg"></div>
+  <p class="hero-eyebrow reveal" style="animation: none; opacity:1;">Built for the next generation of entertainment</p>
+  <h2 class="vision-title reveal">The best stories deserve<br><em>better decisions</em></h2>
+  <p class="vision-sub reveal reveal-delay-1">Join studios and production companies already on the waitlist for early access to Discera's pre-production intelligence platform.</p>
+  <div class="vision-actions reveal reveal-delay-2">
+    <a href="mailto:hello@discera.ai" class="btn-primary">Request Early Access</a>
+    <a href="#product" class="btn-ghost">Explore Platform</a>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-inner">
+    <div>
+      <a href="#" class="footer-logo">disc<span>e</span>ra</a>
+      <div class="footer-tagline">Pre-production intelligence for the entertainment industry.</div>
+    </div>
+    <div class="footer-right">
+      <div class="footer-links">
+        <a href="#product">Platform</a>
+        <a href="#founder">About</a>
+        <a href="#vision">Contact</a>
+      </div>
+      <div class="footer-copy">© 2025 Discera. All rights reserved.</div>
+    </div>
+  </div>
+</footer>
+
+<script>
+  // Cursor
+  const cursor = document.getElementById('cursor');
+  const ring = document.getElementById('cursorRing');
+  let mx = 0, my = 0, rx = 0, ry = 0;
+  document.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; cursor.style.left = mx + 'px'; cursor.style.top = my + 'px'; });
+  function animRing() { rx += (mx - rx) * 0.12; ry += (my - ry) * 0.12; ring.style.left = rx + 'px'; ring.style.top = ry + 'px'; requestAnimationFrame(animRing); }
+  animRing();
+  document.querySelectorAll('a, button, .problem-card, .module, .mcard, .pipe-node').forEach(el => {
+    el.addEventListener('mouseenter', () => ring.classList.add('expand'));
+    el.addEventListener('mouseleave', () => ring.classList.remove('expand'));
+  });
+
+  // Nav scroll
+  const nav = document.getElementById('nav');
+  window.addEventListener('scroll', () => { nav.classList.toggle('scrolled', window.scrollY > 60); });
+
+  // Mobile menu
+  const hamburger = document.getElementById('hamburger');
+  const mobileMenu = document.getElementById('mobileMenu');
+  hamburger.addEventListener('click', () => mobileMenu.classList.toggle('open'));
+  function closeMobileMenu() { mobileMenu.classList.remove('open'); }
+
+  // Scroll reveal
+  const revealEls = document.querySelectorAll('.reveal');
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); } });
+  }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
+  revealEls.forEach(el => observer.observe(el));
+
+  // Count up
+  function countUp(el) {
+    const target = parseInt(el.dataset.target);
+    const suffix = el.dataset.suffix || '';
+    const duration = 1800;
+    const start = performance.now();
+    function frame(now) {
+      const progress = Math.min((now - start) / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      const value = Math.round(eased * target);
+      el.textContent = value.toLocaleString() + suffix;
+      if (progress < 1) requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+  }
+  const countEls = document.querySelectorAll('.counting');
+  const countObserver = new IntersectionObserver(entries => {
+    entries.forEach(e => { if (e.isIntersecting) { countUp(e.target); countObserver.unobserve(e.target); } });
+  }, { threshold: 0.5 });
+  countEls.forEach(el => countObserver.observe(el));
+</script>
+</body>
+</html>
